@@ -108,11 +108,13 @@ public class NumberSenderService extends Service {
     private Notification createNotification(String contentText) {
         // Create an explicit intent for the main activity
         Intent notificationIntent = new Intent(this, MainActivity.class);
+        // Bring existing activity to front, don't create a new one
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
                 0,
                 notificationIntent,
-                PendingIntent.FLAG_IMMUTABLE);
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
         // Build the notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)

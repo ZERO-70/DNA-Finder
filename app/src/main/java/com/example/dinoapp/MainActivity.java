@@ -6,6 +6,7 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,30 +26,48 @@ public class MainActivity extends AppCompatActivity {
 
     private Button connectButton;
     private boolean isConnected = false;
+    private SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize SharedPreferences and restore connection state
+        prefs = getSharedPreferences("dinoapp_prefs", MODE_PRIVATE);
+        isConnected = prefs.getBoolean("connected", false);
+
         // Initialize the connect button
         connectButton = findViewById(R.id.connect_button);
+        // Update button text based on restored state
+        connectButton.setText(isConnected ? "Disconnect" : "Connect to Server");
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!isConnected) {
                     // Start connection
                     startConnectionService();
+                    // Save state
+                    prefs.edit().putBoolean("connected", true).apply();
                 } else {
                     // Stop the connection service
                     Toast.makeText(MainActivity.this, "Disconnecting from server...", Toast.LENGTH_SHORT).show();
                     Intent serviceIntent = new Intent(MainActivity.this, NumberSenderService.class);
                     stopService(serviceIntent);
                     isConnected = false;
+                    prefs.edit().putBoolean("connected", false).apply();
                     connectButton.setText("Connect to Server");
                 }
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh connection state in case service was started
+        isConnected = prefs.getBoolean("connected", false);
+        connectButton.setText(isConnected ? "Disconnect" : "Connect to Server");
     }
 
     private void startConnectionService() {
@@ -78,6 +97,8 @@ public class MainActivity extends AppCompatActivity {
 
         isConnected = true;
         connectButton.setText("Disconnect");
+        // Save connected state
+        prefs.edit().putBoolean("connected", true).apply();
     }
 
     @Override
