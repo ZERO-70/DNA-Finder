@@ -39,12 +39,20 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize the connect button
         connectButton = findViewById(R.id.connect_button);
-        // Update button text based on restored state
-        connectButton.setText(isConnected ? "Disconnect" : "Connect to Server");
+        // Update button text and state based on restored state
+        updateButtonAppearance();
+
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!isConnected) {
+                // Toggle connection state immediately
+                isConnected = !isConnected;
+
+                // Update button appearance right away for immediate visual feedback
+                updateButtonAppearance();
+
+                // Then handle the actual connection logic
+                if (isConnected) {
                     // Start connection
                     startConnectionService();
                     // Save state
@@ -54,9 +62,8 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Disconnecting from server...", Toast.LENGTH_SHORT).show();
                     Intent serviceIntent = new Intent(MainActivity.this, NumberSenderService.class);
                     stopService(serviceIntent);
-                    isConnected = false;
+                    // Save disconnected state
                     prefs.edit().putBoolean("connected", false).apply();
-                    connectButton.setText("Connect to Server");
                 }
             }
         });
@@ -67,7 +74,12 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         // Refresh connection state in case service was started
         isConnected = prefs.getBoolean("connected", false);
-        connectButton.setText(isConnected ? "Disconnect" : "Connect to Server");
+        updateButtonAppearance();
+    }
+
+    private void updateButtonAppearance() {
+        connectButton.setText(isConnected ? "Disconnect" : "Connect");
+        connectButton.setActivated(isConnected);
     }
 
     private void startConnectionService() {
@@ -95,8 +107,8 @@ public class MainActivity extends AppCompatActivity {
             startService(serviceIntent);
         }
 
-        isConnected = true;
-        connectButton.setText("Disconnect");
+        // We've already toggled the button state in onClick, so we don't need to do it
+        // here
         // Save connected state
         prefs.edit().putBoolean("connected", true).apply();
     }
@@ -113,6 +125,10 @@ public class MainActivity extends AppCompatActivity {
                 // Permission denied
                 Toast.makeText(this, "Notification permission is required for stable connection",
                         Toast.LENGTH_LONG).show();
+                // Reset the button since we couldn't connect
+                isConnected = false;
+                updateButtonAppearance();
+                prefs.edit().putBoolean("connected", false).apply();
             }
         }
     }
